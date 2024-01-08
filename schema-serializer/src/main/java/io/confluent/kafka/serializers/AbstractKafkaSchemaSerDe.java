@@ -679,7 +679,7 @@ public abstract class AbstractKafkaSchemaSerDe implements Closeable {
           Object result = ruleExecutor.transform(ctx, message);
           switch (rule.getKind()) {
             case CONDITION:
-              if (Boolean.FALSE.equals(result)) {
+              if (!isResultTrue(result)) {
                 String errMsg = rule.getDoc();
                 if (errMsg == null || errMsg.isEmpty()) {
                   String expr = rule.getExpr();
@@ -710,6 +710,10 @@ public abstract class AbstractKafkaSchemaSerDe implements Closeable {
       }
     }
     return message;
+  }
+
+  private boolean isResultTrue(Object result) {
+    return result instanceof Boolean ? (Boolean) result : Boolean.parseBoolean(result.toString());
   }
 
   private boolean skipRule(Rule rule, Headers headers) {

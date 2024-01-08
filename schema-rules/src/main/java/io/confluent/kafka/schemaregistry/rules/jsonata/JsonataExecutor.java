@@ -22,6 +22,7 @@ import com.api.jsonata4java.expressions.Expressions;
 import com.api.jsonata4java.expressions.ParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -37,6 +38,7 @@ public class JsonataExecutor implements RuleExecutor {
 
   public static final String TYPE = "JSONATA";
 
+  public static final ObjectMapper objectMapper = new ObjectMapper();
   public static final String TIMEOUT_MS = "timeout.ms";
   public static final String MAX_DEPTH = "max.depth";
 
@@ -96,7 +98,7 @@ public class JsonataExecutor implements RuleExecutor {
   @Override
   public Object transform(RuleContext ctx, Object message)
       throws RuleException {
-    JsonNode jsonObj = (JsonNode) message;
+    JsonNode jsonObj = getJsonNodeFromObject(message);
     Expressions expr;
     try {
       expr = cache.get(ctx.rule().getExpr());
@@ -112,6 +114,18 @@ public class JsonataExecutor implements RuleExecutor {
       return result;
     } catch (EvaluateException e) {
       throw new RuleException("Could not evaluate expression", e);
+    }
+  }
+
+  private JsonNode getJsonNodeFromObject(Object message) throws RuleException {
+    System.out.println(message);
+    if (message instanceof JsonNode) {
+      return (JsonNode) message;
+    }
+    try {
+      return objectMapper.readTree(message.toString());
+    } catch (JsonProcessingException e) {
+      throw new RuleException(e);
     }
   }
 }
